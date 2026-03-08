@@ -213,6 +213,7 @@ function startGame() {
   players = setupPlayers.map(name => ({ name, eliminated: false }));
   currentIndex = 0;
   initDeck();
+  usedLetters.clear();
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('game-screen').style.display = 'flex';
   buildWheel(); nextCategory(true); renderPlayers(); startTimer();
@@ -244,8 +245,6 @@ function nextCategory(silent) {
   document.getElementById('category-text').textContent = cat;
   document.getElementById('category-count').textContent =
     remaining > 0 ? remaining + ' categories left in this round' : '🔄 Starting new round!';
-  usedLetters.clear();
-  LETTERS.forEach(l => { const b = document.getElementById('btn-' + l); if (b) b.classList.remove('used'); });
   if (!silent) startTimer();
 }
 
