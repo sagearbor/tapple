@@ -229,10 +229,13 @@ function buildWheel() {
   });
 }
 
+let letterLocked = false;
 function pressLetter(letter) {
-  if (usedLetters.has(letter)) return;
+  if (usedLetters.has(letter) || letterLocked) return;
+  letterLocked = true;
   usedLetters.add(letter);
   document.getElementById('btn-' + letter).classList.add('used');
+  setTimeout(() => { letterLocked = false; }, 1000);
   nextTurn();
 }
 
