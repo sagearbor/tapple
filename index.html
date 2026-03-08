@@ -233,13 +233,7 @@ function pressLetter(letter) {
   if (usedLetters.has(letter)) return;
   usedLetters.add(letter);
   document.getElementById('btn-' + letter).classList.add('used');
-  // Auto-switch category when all 26 letters used
-  if (usedLetters.size >= 26) {
-    showAlert('🎉 All letters used! New category!', 2000);
-    setTimeout(() => nextCategory(), 1800);
-  } else {
-    nextTurn();
-  }
+  nextTurn();
 }
 
 function nextCategory(silent) {
@@ -301,7 +295,8 @@ function nextTurn() {
   const active = activePlayers();
   if (!active.length) return;
   currentIndex = (currentIndex + 1) % active.length;
-  renderPlayers(); startTimer();
+  renderPlayers();
+  nextCategory(false);
 }
 
 function eliminatePlayer() {
