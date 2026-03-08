@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tapple</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; }
+  h1 { font-size: 2.2rem; font-weight: 900; letter-spacing: 4px; color: #f5a623; margin: 12px 0 4px; text-transform: uppercase; }
+  #category-box { background: #16213e; border: 2px solid #f5a623; border-radius: 16px; padding: 14px 28px; text-align: center; margin: 12px 0; min-width: 280px; }
+  #category-label { font-size: 0.75rem; letter-spacing: 2px; color: #f5a623; text-transform: uppercase; }
+  #category-text { font-size: 1.5rem; font-weight: 700; margin-top: 4px; }
+  #timer-ring { position: relative; width: 110px; height: 110px; margin: 10px auto; }
+  #timer-ring svg { transform: rotate(-90deg); }
+  #timer-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.2rem; font-weight: 900; color: #f5a623; }
+  #player-banner { font-size: 1rem; letter-spacing: 1px; color: #aaa; margin: 4px 0 10px; }
+  #player-banner span { color: #fff; font-weight: 700; font-size: 1.1rem; }
+  #wheel { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; max-width: 340px; width: 100%; margin: 0 auto 12px; }
+  .letter-btn { background: #0f3460; border: 2px solid #1a6aad; border-radius: 10px; color: #fff; font-size: 1rem; font-weight: 700; padding: 10px 0; cursor: pointer; transition: background 0.15s, transform 0.1s; user-select: none; touch-action: manipulation; }
+  .letter-btn:active { transform: scale(0.92); }
+  .letter-btn.used { background: #2a2a2a; border-color: #444; color: #555; cursor: not-allowed; }
+  .letter-btn.used:active { transform: none; }
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .ctrl-btn { background: #0f3460; border: 2px solid #1a6aad; border-radius: 10px; color: #fff; font-size: 0.9rem; font-weight: 600; padding: 10px 18px; cursor: pointer; transition: background 0.15s; }
+  .ctrl-btn:hover { background: #1a6aad; }
+  .ctrl-btn.danger { border-color: #e74c3c; }
+  .ctrl-btn.danger:hover { background: #e74c3c; }
+  .ctrl-btn.success { border-color: #27ae60; }
+  .ctrl-btn.success:hover { background: #27ae60; }
+  #players-section { width: 100%; max-width: 340px; margin-top: 6px; }
+  #players-section h3 { font-size: 0.75rem; letter-spacing: 2px; color: #f5a623; text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+  #players-list { display: flex; flex-direction: column; gap: 6px; }
+  .player-card { background: #16213e; border: 2px solid #2a3a6a; border-radius: 10px; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
+  .player-card.active { border-color: #f5a623; background: #1e2f5a; }
+  .player-card.eliminated { opacity: 0.4; text-decoration: line-through; }
+  #alert-box { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: #fff; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 1.1rem; display: none; z-index: 99; text-align: center; min-width: 220px; }
+  #setup-screen { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 20px; width: 100%; max-width: 340px; }
+  #setup-screen h2 { color: #f5a623; letter-spacing: 2px; }
+  #setup-players-list { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .setup-player { background: #16213e; border: 2px solid #2a3a6a; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .remove-player { cursor: pointer; color: #e74c3c; font-size: 1.1rem; background: none; border: none; }
+  #setup-add-row { display: flex; gap: 8px; width: 100%; }
+  #setup-name-input, #timer-select { background: #16213e; border: 2px solid #2a3a6a; border-radius: 10px; color: #fff; font-size: 0.95rem; padding: 10px 12px; width: 100%; }
+  #setup-name-input:focus, #timer-select:focus { outline: none; border-color: #f5a623; }
+  #game-screen { display: none; width: 100%; flex-direction: column; align-items: center; }
+</style>
+</head>
+<body>
+<h1>🟠 Tapple</h1>
+<div id="alert-box"></div>
+
+<div id="setup-screen">
+  <h2>NEW GAME</h2>
+  <div style="width:100%">
+    <label style="font-size:.75rem;letter-spacing:2px;color:#f5a623;text-transform:uppercase;display:block;margin-bottom:6px;">Timer (seconds)</label>
+    <select id="timer-select">
+      <option value="10" selected>10 seconds</option>
+      <option value="15">15 seconds</option>
+      <option value="20">20 seconds</option>
+      <option value="30">30 seconds</option>
+    </select>
+  </div>
+  <div style="width:100%">
+    <label style="font-size:.75rem;letter-spacing:2px;color:#f5a623;text-transform:uppercase;display:block;margin-bottom:8px;">Players</label>
+    <div id="setup-players-list"></div>
+    <div id="setup-add-row" style="margin-top:8px;">
+      <input id="setup-name-input" type="text" placeholder="Player name…" maxlength="20" />
+      <button class="ctrl-btn success" onclick="setupAddPlayer()">Add</button>
+    </div>
+  </div>
+  <button class="ctrl-btn success" style="width:100%;padding:14px;font-size:1rem;" onclick="startGame()">▶ Start Game</button>
+</div>
+
+<div id="game-screen">
+  <div id="category-box">
+    <div id="category-label">Category</div>
+    <div id="category-text">Loading…</div>
+  </div>
+  <div id="timer-ring">
+    <svg width="110" height="110" viewBox="0 0 110 110">
+      <circle cx="55" cy="55" r="46" stroke="#2a2a4a" stroke-width="8" fill="none"/>
+      <circle id="timer-arc" cx="55" cy="55" r="46" stroke="#f5a623" stroke-width="8" fill="none" stroke-dasharray="289" stroke-dashoffset="0" stroke-linecap="round"/>
+    </svg>
+    <div id="timer-num">10</div>
+  </div>
+  <div id="player-banner">Current player: <span id="current-player-name">—</span></div>
+  <div id="wheel"></div>
+  <div class="btn-row">
+    <button class="ctrl-btn danger" onclick="eliminatePlayer()">❌ Eliminate</button>
+    <button class="ctrl-btn" onclick="newCategory()">🔀 New Category</button>
+    <button class="ctrl-btn" onclick="nextTurn()">⏭ Skip Turn</button>
+  </div>
+  <div class="btn-row">
+    <button class="ctrl-btn danger" onclick="endGame()">🏁 End Game</button>
+  </div>
+  <div id="players-section">
+    <h3>Players</h3>
+    <div id="players-list"></div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  "Animals","Foods you eat for breakfast","Things at a beach","Sports","Movies",
+  "Things in a kitchen","Countries","Things that are red","Musical instruments",
+  "Things in a classroom","TV shows","Things that fly","Vegetables","Fruits",
+  "Clothing items","Things at a park","Candy brands","Cartoon characters",
+  "Things you find in a hospital","Superheroes","Things in a bathroom",
+  "Jobs/professions","Things that are cold","Board games","Things in a zoo",
+  "Famous athletes","Dog breeds","Things at a birthday party","Pizza toppings",
+  "Video game characters","Things in a forest","Dance styles",
+  "Things you carry in a backpack","Car brands","Things on a farm","Flowers",
+  "Ice cream flavors","Things at school","Holidays","Things that make noise",
+  "Things in outer space","Summer activities","Breakfast cereals","Things with wheels",
+  "Reptiles","Words ending in -ing","Types of weather","Fast food restaurants",
+  "Ball sports","Things that melt","Baby items","Types of music","Things in a garage",
+  "Famous buildings","Things that are soft","Halloween costumes","Pasta types",
+  "Things at a carnival","Things on a menu","Things made of wood","Spices and seasonings",
+  "Things you find at a pool","Words that mean happy","Things that are round",
+  "Things in a movie theater","Fish and sea creatures","Things on a pizza",
+  "Things in your room","Things you do on a snow day","Words that rhyme with blue",
+];
+
+let players = [], currentIndex = 0, timerSeconds = 10, timeLeft = 10;
+let timerInterval = null, usedLetters = new Set(), setupPlayers = [];
+const ARC_CIRC = 2 * Math.PI * 46;
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+function renderSetupPlayers() {
+  const el = document.getElementById('setup-players-list');
+  el.innerHTML = '';
+  setupPlayers.forEach((name, i) => {
+    const div = document.createElement('div');
+    div.className = 'setup-player';
+    div.innerHTML = '<span>' + name + '</span><button class="remove-player" onclick="setupRemovePlayer(' + i + ')">✕</button>';
+    el.appendChild(div);
+  });
+}
+
+function setupAddPlayer() {
+  const inp = document.getElementById('setup-name-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  setupPlayers.push(name);
+  inp.value = '';
+  renderSetupPlayers();
+  inp.focus();
+}
+document.getElementById('setup-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') setupAddPlayer(); });
+
+function setupRemovePlayer(i) { setupPlayers.splice(i, 1); renderSetupPlayers(); }
+
+function startGame() {
+  if (setupPlayers.length < 2) { showAlert('Add at least 2 players!'); return; }
+  timerSeconds = parseInt(document.getElementById('timer-select').value);
+  players = setupPlayers.map(name => ({ name, eliminated: false }));
+  currentIndex = 0;
+  document.getElementById('setup-screen').style.display = 'none';
+  const gs = document.getElementById('game-screen');
+  gs.style.display = 'flex';
+  buildWheel();
+  newCategory();
+  renderPlayers();
+  startTimer();
+}
+
+function buildWheel() {
+  const wheel = document.getElementById('wheel');
+  wheel.innerHTML = '';
+  LETTERS.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'letter-btn';
+    btn.id = 'btn-' + letter;
+    btn.textContent = letter;
+    btn.onclick = () => pressLetter(letter);
+    wheel.appendChild(btn);
+  });
+}
+
+function pressLetter(letter) {
+  if (usedLetters.has(letter)) return;
+  usedLetters.add(letter);
+  document.getElementById('btn-' + letter).classList.add('used');
+  nextTurn();
+}
+
+function updateTimerUI() {
+  const pct = timeLeft / timerSeconds;
+  const arc = document.getElementById('timer-arc');
+  arc.style.strokeDashoffset = ARC_CIRC * (1 - pct);
+  arc.style.stroke = pct > 0.4 ? '#f5a623' : pct > 0.2 ? '#e67e22' : '#e74c3c';
+  document.getElementById('timer-num').textContent = timeLeft;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = timerSeconds;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerUI();
+    if (timeLeft <= 0) { clearInterval(timerInterval); timerExpired(); }
+  }, 1000);
+}
+
+function timerExpired() {
+  const p = activePlayers();
+  if (!p.length) return;
+  const name = p[currentIndex % p.length].name;
+  showAlert('Time\'s up! ' + name + ' is OUT!', 3000);
+  players.find(pl => pl.name === name).eliminated = true;
+  renderPlayers();
+  checkWin();
+  if (activePlayers().length > 1) { currentIndex = currentIndex % activePlayers().length; renderPlayers(); startTimer(); }
+}
+
+function activePlayers() { return players.filter(p => !p.eliminated); }
+
+function renderPlayers() {
+  const list = document.getElementById('players-list');
+  list.innerHTML = '';
+  const active = activePlayers();
+  const curName = active.length ? active[currentIndex % active.length].name : '';
+  players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-card' + (p.eliminated ? ' eliminated' : '') + (!p.eliminated && p.name === curName ? ' active' : '');
+    div.innerHTML = '<span>' + p.name + '</span>';
+    list.appendChild(div);
+  });
+  document.getElementById('current-player-name').textContent = curName || '—';
+}
+
+function nextTurn(afterElim) {
+  const active = activePlayers();
+  if (!active.length) return;
+  currentIndex = (currentIndex + 1) % active.length;
+  renderPlayers();
+  startTimer();
+}
+
+function eliminatePlayer() {
+  const active = activePlayers();
+  if (active.length <= 2) { showAlert("Can't eliminate — too few players!"); return; }
+  const cur = active[currentIndex % active.length];
+  players.find(p => p.name === cur.name).eliminated = true;
+  renderPlayers();
+  checkWin();
+  currentIndex = currentIndex % activePlayers().length;
+  renderPlayers();
+  startTimer();
+}
+
+function checkWin() {
+  const active = activePlayers();
+  if (active.length === 1) { clearInterval(timerInterval); showAlert('🏆 ' + active[0].name + ' WINS!', 5000); }
+}
+
+function newCategory() {
+  const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+  document.getElementById('category-text').textContent = cat;
+  usedLetters.clear();
+  LETTERS.forEach(l => { const b = document.getElementById('btn-' + l); if (b) b.classList.remove('used'); });
+  startTimer();
+}
+
+let alertTimeout;
+function showAlert(msg, dur) {
+  dur = dur || 2500;
+  const box = document.getElementById('alert-box');
+  box.textContent = msg;
+  box.style.display = 'block';
+  clearTimeout(alertTimeout);
+  alertTimeout = setTimeout(() => box.style.display = 'none', dur);
+}
+
+function endGame() {
+  clearInterval(timerInterval);
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  setupPlayers = players.map(p => p.name);
+  renderSetupPlayers();
+}
+
+setupPlayers = ['Player 1', 'Player 2'];
+renderSetupPlayers();
+</script>
+</body>
+</html>
